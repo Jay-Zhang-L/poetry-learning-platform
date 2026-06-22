@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.ReciteRecordingMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="ReciteRecordingMap" type="com.shici.domain.ReciteRecording">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="poemId" column="poem_id"/>
+        <result property="poemTitle" column="poem_title"/>
+        <result property="poemContent" column="poem_content"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="audioDuration" column="audio_duration"/>
+        <result property="transcribedText" column="transcribed_text"/>
+        <result property="clarityScore" column="clarity_score"/>
+        <result property="rhythmScore" column="rhythm_score"/>
+        <result property="emotionScore" column="emotion_score"/>
+        <result property="overallScore" column="overall_score"/>
+        <result property="aiEvaluation" column="ai_evaluation"/>
+        <result property="aiSuggestion" column="ai_suggestion"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 插入录音评价记录 -->
+    <insert id="insert" parameterType="com.shici.domain.ReciteRecording" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO recite_recording (
+            user_id,
+            poem_id,
+            poem_title,
+            poem_content,
+            audio_url,
+            audio_duration,
+            transcribed_text,
+            clarity_score,
+            rhythm_score,
+            emotion_score,
+            overall_score,
+            ai_evaluation,
+            ai_suggestion,
+            created_at
+        ) VALUES (
+            #{userId},
+            #{poemId},
+            #{poemTitle},
+            #{poemContent},
+            #{audioUrl},
+            #{audioDuration},
+            #{transcribedText},
+            #{clarityScore},
+            #{rhythmScore},
+            #{emotionScore},
+            #{overallScore},
+            #{aiEvaluation},
+            #{aiSuggestion},
+            NOW()
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="ReciteRecordingMap">
+        SELECT * FROM recite_recording WHERE id = #{id}
+    </select>
+
+    <!-- 查询用户的所有录音评价记录 -->
+    <select id="selectByUserId" resultMap="ReciteRecordingMap">
+        SELECT * FROM recite_recording 
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT 50
+    </select>
+
+    <!-- 查询用户对某首诗的录音评价记录 -->
+    <select id="selectByUserIdAndPoemId" resultMap="ReciteRecordingMap">
+        SELECT * FROM recite_recording 
+        WHERE user_id = #{userId} AND poem_id = #{poemId}
+        ORDER BY created_at DESC
+        LIMIT 20
+    </select>
+
+    <!-- 删除录音评价记录 -->
+    <delete id="deleteById">
+        DELETE FROM recite_recording 
+        WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+</mapper>

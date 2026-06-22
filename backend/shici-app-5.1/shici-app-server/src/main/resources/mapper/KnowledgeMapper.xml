@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.KnowledgeMapper">
+
+    <resultMap id="BaseResultMap" type="com.shici.domain.Knowledge">
+        <id column="id" property="id"/>
+        <result column="page_key" property="pageKey"/>
+        <result column="title" property="title"/>
+        <result column="category" property="category"/>
+        <result column="full_description" property="fullDescription"/>
+        <result column="detail_text" property="detailText"/>
+        <result column="image_bg" property="imageBg"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="cover_url" property="coverUrl"/>
+    </resultMap>
+
+    <select id="findAllEnabled" resultMap="BaseResultMap">
+        SELECT
+            id,
+            page_key,
+            title,
+            category,
+            full_description,
+            detail_text,
+            image_bg,
+            cover_url,
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM knowledge
+        WHERE status = 1
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findByPageKey" resultMap="BaseResultMap">
+        SELECT
+            id,
+            page_key,
+            title,
+            category,
+            full_description,
+            detail_text,
+            image_bg,
+            cover_url,
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM knowledge
+        WHERE page_key = #{pageKey} AND status = 1
+    </select>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT
+            id,
+            page_key,
+            title,
+            category,
+            full_description,
+            detail_text,
+            image_bg,
+            cover_url
+            sort_order,
+            status,
+            created_at,
+            updated_at
+        FROM knowledge
+        WHERE id = #{id} AND status = 1
+    </select>
+
+</mapper>

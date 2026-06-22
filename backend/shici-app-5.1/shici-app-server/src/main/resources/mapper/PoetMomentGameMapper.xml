@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.PoetMomentGameMapper">
+
+    <select id="selectRandomMomentWithOptions" resultType="com.shici.domain.dto.poetmoment.PoetMomentGameMomentRow">
+        SELECT m.moment_id AS momentId,
+               m.content   AS content,
+               m.image_url AS imageUrl
+        FROM poet_moments m
+        WHERE EXISTS (SELECT 1 FROM game_options g WHERE g.moment_id = m.moment_id)
+        ORDER BY RAND()
+            LIMIT 1
+    </select>
+
+    <select id="selectOptionsByMomentId" resultType="com.shici.domain.dto.poetmoment.PoetMomentGameOptionRow">
+        SELECT go.option_id AS optionId,
+               go.poet_id   AS poetId,
+               pi.name      AS poetName
+        FROM game_options go
+                 JOIN poet_info pi ON pi.poet_id = go.poet_id
+        WHERE go.moment_id = #{momentId}
+        ORDER BY go.option_id ASC
+    </select>
+
+    <select id="selectCorrectPoetIdByMomentId" resultType="java.lang.Integer">
+        SELECT poet_id
+        FROM game_options
+        WHERE moment_id = #{momentId}
+          AND is_correct = 1
+            LIMIT 1
+    </select>
+
+    <select id="countOptionByMomentAndPoet" resultType="int">
+        SELECT COUNT(1)
+        FROM game_options
+        WHERE moment_id = #{momentId}
+          AND poet_id = #{poetId}
+    </select>
+
+    <select id="selectPoetById" resultType="com.shici.domain.dto.poetmoment.PoetMomentGamePoetRow">
+        SELECT poet_id     AS poetId,
+               name,
+               dynasty,
+               birth_year  AS birthYear,
+               death_year  AS deathYear,
+               description,
+               image_url   AS imageUrl
+        FROM poet_info
+        WHERE poet_id = #{poetId}
+            LIMIT 1
+    </select>
+
+    <insert id="insertGameRecord">
+        INSERT INTO game_records (user_id, moment_id, selected_poet_id, is_correct)
+        VALUES (#{userId}, #{momentId}, #{selectedPoetId}, #{isCorrect})
+    </insert>
+
+    <select id="countAttemptsByUser" resultType="int">
+        SELECT COUNT(1) FROM game_records WHERE user_id = #{userId}
+    </select>
+
+    <select id="countCorrectByUser" resultType="int">
+        SELECT COUNT(1) FROM game_records WHERE user_id = #{userId} AND is_correct = 1
+    </select>
+
+    <select id="selectRecordsByUserId" resultType="com.shici.domain.dto.poetmoment.PoetMomentGameRecordRow">
+        SELECT gr.record_id         AS recordId,
+               gr.moment_id         AS momentId,
+               pm.content           AS content,
+               gr.selected_poet_id  AS selectedPoetId,
+               sp.name              AS selectedPoetName,
+               cp.poet_id           AS correctPoetId,
+               cp.name              AS correctPoetName,
+               gr.is_correct        AS correct,
+               gr.created_at        AS createdAt
+        FROM game_records gr
+                 JOIN poet_moments pm ON pm.moment_id = gr.moment_id
+                 JOIN poet_info sp ON sp.poet_id = gr.selected_poet_id
+                 JOIN game_options go ON go.moment_id = gr.moment_id AND go.is_correct = 1
+            JOIN poet_info cp ON cp.poet_id = go.poet_id
+        WHERE gr.user_id = #{userId}
+        ORDER BY gr.created_at DESC
+    </select>
+
+    <select id="selectMomentsByPoetId" resultType="com.shici.domain.dto.poetmoment.PoetMomentGameMomentRow">
+        SELECT moment_id   AS momentId,
+               content,
+               image_url   AS imageUrl,
+               likes_count AS likesCount,
+               created_at  AS createdAt
+        FROM poet_moments
+        WHERE poet_id = #{poetId}
+        ORDER BY created_at DESC
+    </select>
+</mapper>

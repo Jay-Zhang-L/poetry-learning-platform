@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.LearnUnitMapper">
+
+  <select id="listByGrade" resultType="com.shici.domain.LearnUnit">
+    SELECT id, grade, name, description, estimated_min, mode, difficulty_star, sort_no
+    FROM learn_unit
+    WHERE grade = #{grade}
+    ORDER BY sort_no ASC, id ASC
+  </select>
+
+</mapper>

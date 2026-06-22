@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.ShiChuangMapper">
+
+    <sql id="SearchColumns">
+        id,
+        title,
+        author,
+        dynasty,
+        genre,
+        theme,
+        quote,
+        content,
+        tags,
+        cover_url as coverUrl,
+        season,
+        emotion,
+        scenery,
+        festival,
+        historical_period as historicalPeriod,
+        poetic_form as poeticForm,
+        rhetorical_device as rhetoricalDevice,
+        hot
+    </sql>
+
+    <sql id="DetailColumns">
+        id,
+        title,
+        author,
+        dynasty,
+        genre,
+        theme,
+        quote,
+        content,
+        translation,
+        analysis,
+        tags,
+        cover_url as coverUrl,
+        season,
+        emotion,
+        scenery,
+        festival,
+        historical_period as historicalPeriod,
+        poetic_form as poeticForm,
+        rhetorical_device as rhetoricalDevice,
+        hot
+    </sql>
+
+    <select id="searchByTitle" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where title like concat('%', #{keyword}, '%')
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="searchByAuthor" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where author like concat('%', #{keyword}, '%')
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="searchByQuote" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where quote is not null
+        and quote like concat('%', #{keyword}, '%')
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="searchByContent" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where content is not null
+        and content like concat('%', #{keyword}, '%')
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="searchByAuthorAndTitle" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where author like concat('%', #{author}, '%')
+        and title like concat('%', #{title}, '%')
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="recommendBySingleTag" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where (
+        theme like concat('%', #{tag}, '%')
+        or season like concat('%', #{tag}, '%')
+        or emotion like concat('%', #{tag}, '%')
+        or scenery like concat('%', #{tag}, '%')
+        or tags like concat('%', #{tag}, '%')
+        or quote like concat('%', #{tag}, '%')
+        or content like concat('%', #{tag}, '%')
+        )
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="recommendBySummary" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        where (
+        quote like concat('%', #{summary}, '%')
+        or content like concat('%', #{summary}, '%')
+        or analysis like concat('%', #{summary}, '%')
+        )
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="recommendHot" resultType="java.util.HashMap">
+        select <include refid="SearchColumns"/>
+        from poem
+        order by hot desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="getDetail" resultType="java.util.HashMap">
+        select <include refid="DetailColumns"/>
+        from poem
+        where id = #{id}
+        limit 1
+    </select>
+
+</mapper>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.PoetryMapMapper">
+
+    <!-- ==================== 地图概览相关 ==================== -->
+
+    <!-- 获取所有地点的热度数据 -->
+    <select id="getLocationHeatData" resultType="com.shici.domain.dto.map.LocationHeatDto">
+        SELECT 
+            l.id,
+            l.name,
+            l.longitude,
+            l.latitude,
+            COALESCE(SUM(lps.heat_value), 0) AS heatValue,
+            COALESCE(SUM(lps.poem_count), 0) AS poemCount,
+            COALESCE(SUM(lps.poet_count), 0) AS poetCount
+        FROM locations l
+        LEFT JOIN location_poem_stats lps ON l.id = lps.location_id
+        <where>
+            <if test="dynasty != null and dynasty != ''">
+                lps.dynasty = #{dynasty}
+            </if>
+            <if test="minHeat != null">
+                AND lps.heat_value >= #{minHeat}
+            </if>
+        </where>
+        GROUP BY l.id, l.name, l.longitude, l.latitude
+        ORDER BY heatValue DESC
+    </select>
+
+    <!-- 获取地点的著名诗人列表 -->
+    <select id="getFamousPoetsByLocation" resultType="java.lang.String">
+        SELECT DISTINCT p.name
+        FROM poets p
+        INNER JOIN poem_locations pl ON p.id IN (
+            SELECT pm.poet_id FROM poems pm WHERE pm.id = pl.poem_id
+        )
+        WHERE pl.location_id = #{locationId}
+        <if test="dynasty != null and dynasty != ''">
+            AND p.dynasty = #{dynasty}
+        </if>
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取全部诗人列表 -->
+    <select id="getAllPoets" resultType="com.shici.domain.dto.map.RepresentativePoetDto">
+        SELECT 
+            p.id,
+            p.name,
+            p.dynasty,
+            (SELECT COUNT(*) FROM poems pm WHERE pm.poet_id = p.id) AS relatedPoems,
+            p.description
+        FROM poets p
+        ORDER BY relatedPoems DESC, p.id ASC
+    </select>
+
+    <!-- ==================== 地点详情相关 ==================== -->
+
+    <!-- 获取地点基本信息 -->
+    <select id="getLocationById" resultType="com.shici.domain.dto.map.LocationDetailResponse">
+        SELECT 
+            id,
+            name,
+            historical_name AS historicalName,
+            description,
+            longitude,
+            latitude
+        FROM locations
+        WHERE id = #{id}
+    </select>
+
+    <!-- 获取全部诗人 -->
+    <select id="getRepresentativePoets" resultType="com.shici.domain.dto.map.RepresentativePoetDto">
+        SELECT 
+            p.id,
+            p.name,
+            p.dynasty,
+            (SELECT COUNT(*) FROM poems pm WHERE pm.poet_id = p.id) AS relatedPoems,
+            p.description
+        FROM poets p
+        ORDER BY relatedPoems DESC, p.id ASC
+    </select>
+
+    <!-- 获取地点的典故列表 -->
+    <select id="getAllusionsByLocationId" resultType="com.shici.domain.dto.map.AllusionDto">
+        SELECT 
+            id,
+            title,
+            content,
+            dynasty
+        FROM allusions
+        WHERE location_id = #{locationId}
+        ORDER BY dynasty
+    </select>
+
+    <!-- 获取地点的诗词统计（按朝代） -->
+    <select id="getPoemStatsByLocation" resultType="com.shici.domain.dto.map.DynastyStatDto">
+        SELECT 
+            dynasty,
+            SUM(poem_count) AS count
+        FROM location_poem_stats
+        WHERE location_id = #{locationId}
+        GROUP BY dynasty
+        ORDER BY count DESC
+    </select>
+
+    <!-- ==================== 诗人路线相关 ==================== -->
+
+    <!-- 获取诗人基本信息 -->
+    <select id="getPoetInfoById" resultType="com.shici.domain.dto.map.PoetInfoDto">
+        SELECT 
+            id,
+            name,
+            dynasty,
+            birth_year AS birthYear,
+            death_year AS deathYear
+        FROM poets
+        WHERE id = #{id}
+    </select>
+
+    <!-- 获取诗人路线 -->
+    <select id="getPoetRoute" resultType="com.shici.domain.dto.map.RoutePointDto">
+        SELECT 
+            pr.visit_order AS `order`,
+            pr.location_id AS locationId,
+            l.name AS locationName,
+            pr.visit_year AS year,
+            pr.event_description AS event,
+            l.longitude,
+            l.latitude
+        FROM poet_routes pr
+        INNER JOIN locations l ON pr.location_id = l.id
+        WHERE pr.poet_id = #{poetId}
+        ORDER BY pr.visit_order ASC
+    </select>
+
+    <!-- 获取路线上某地点的诗词 -->
+    <select id="getPoemsByPoetAndLocation" resultType="com.shici.domain.dto.map.RoutePoemDto">
+        SELECT 
+            pm.id,
+            pm.title,
+            pm.description
+        FROM poems pm
+        INNER JOIN poem_locations pl ON pm.id = pl.poem_id
+        WHERE pm.poet_id = #{poetId} AND pl.location_id = #{locationId}
+        LIMIT 10
+    </select>
+
+    <!-- ==================== 诗人关系网相关 ==================== -->
+
+    <!-- 获取诗人关系网节点 -->
+    <select id="getRelationNodes" resultType="com.shici.domain.dto.map.RelationNodeDto">
+        SELECT DISTINCT
+            p.id,
+            p.name,
+            CASE WHEN p.id = #{poetId} THEN 1 ELSE 2 END AS `group`,
+            p.dynasty,
+            p.image_url AS imageUrl
+        FROM poets p
+        WHERE p.id = #{poetId}
+           OR p.id IN (
+               SELECT poet2_id FROM poet_relationships WHERE poet1_id = #{poetId}
+               UNION
+               SELECT poet1_id FROM poet_relationships WHERE poet2_id = #{poetId}
+           )
+    </select>
+
+    <!-- 获取诗人关系网边 -->
+    <select id="getRelationEdges" resultType="com.shici.domain.dto.map.RelationEdgeDto">
+        SELECT 
+            poet1_id AS source,
+            poet2_id AS target,
+            relationship_type AS type,
+            strength,
+            description
+        FROM poet_relationships
+        WHERE poet1_id = #{poetId} OR poet2_id = #{poetId}
+    </select>
+
+    <!-- ==================== 时间轴相关 ==================== -->
+
+    <!-- 获取诗人时间轴事件 -->
+    <select id="getTimelineEvents" resultType="com.shici.domain.dto.map.TimelineEventDto">
+        SELECT 
+            te.id,
+            te.event_year AS year,
+            te.event_type AS type,
+            te.event_name AS name,
+            te.event_description AS description,
+            l.name AS location,
+            te.importance
+        FROM timeline_events te
+        LEFT JOIN locations l ON te.location_id = l.id
+        WHERE te.poet_id = #{poetId}
+        ORDER BY te.event_year ASC, te.importance DESC
+    </select>
+
+    <!-- ==================== 典故详情相关 ==================== -->
+
+    <!-- 获取地点名称 -->
+    <select id="getLocationName" resultType="java.lang.String">
+        SELECT name FROM locations WHERE id = #{id}
+    </select>
+
+    <!-- 获取地点的典故详情 -->
+    <select id="getAllusionDetailsByLocation" resultType="com.shici.domain.dto.map.AllusionDetailDto">
+        SELECT 
+            id,
+            title,
+            content,
+            dynasty
+        FROM allusions
+        WHERE location_id = #{locationId}
+        ORDER BY dynasty
+    </select>
+
+    <!-- 获取典故相关的诗词 -->
+    <select id="getRelatedPoemsByAllusion" resultType="com.shici.domain.dto.map.RelatedPoemDto">
+        SELECT 
+            pm.id,
+            pm.title,
+            p.name AS poet
+        FROM poems pm
+        INNER JOIN poets p ON pm.poet_id = p.id
+        WHERE pm.id IN (
+            SELECT poem_id FROM poem_locations 
+            WHERE location_id = (SELECT location_id FROM allusions WHERE id = #{allusionId})
+        )
+        LIMIT 5
+    </select>
+
+    <!-- ==================== 省份相关 ==================== -->
+
+    <!-- 获取所有省份列表 -->
+    <select id="getAllProvinces" resultType="com.shici.domain.dto.map.ProvinceDto">
+        SELECT 
+            id,
+            name,
+            historical_name AS historicalName,
+            poem_count AS poemCount,
+            poet_count AS poetCount
+        FROM provinces
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据ID获取省份详情 -->
+    <select id="getProvinceById" resultType="com.shici.domain.dto.map.ProvinceDetailResponse">
+        SELECT 
+            id,
+            name,
+            historical_name AS historicalName,
+            description,
+            poem_count AS poemCount,
+            poet_count AS poetCount
+        FROM provinces
+        WHERE id = #{id}
+    </select>
+
+    </mapper>

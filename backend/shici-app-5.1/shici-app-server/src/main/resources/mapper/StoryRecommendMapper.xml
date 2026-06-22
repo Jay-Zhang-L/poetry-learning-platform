@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.StoryRecommendMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="StoryRecommendVoMap" type="com.shici.domain.dto.recommendation.StoryRecommendVo">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="title" column="title"/>
+        <result property="summary" column="summary"/>
+        <result property="dynasty" column="dynasty"/>
+        <result property="keywords" column="keywords"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="heat" column="heat"/>
+    </resultMap>
+
+    <!-- 获取所有启用的典故 -->
+    <select id="selectAllActiveStories" resultMap="StoryRecommendVoMap">
+        SELECT id, category_id, title, summary, dynasty, keywords, cover_image, heat
+        FROM story
+        WHERE status = 1
+        ORDER BY heat DESC
+    </select>
+
+    <!-- 根据ID获取典故详情 -->
+    <select id="selectStoryById" resultMap="StoryRecommendVoMap">
+        SELECT id, category_id, title, summary, dynasty, keywords, cover_image, heat
+        FROM story
+        WHERE id = #{id} AND status = 1
+    </select>
+
+    <!-- 获取热门典故 -->
+    <select id="selectHotStories" resultMap="StoryRecommendVoMap">
+        SELECT id, title, summary, dynasty, keywords, cover_image, heat
+        FROM story
+        WHERE status = 1
+        <if test="excludeIds != null and excludeIds.size() > 0">
+            AND id NOT IN
+            <foreach collection="excludeIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        ORDER BY heat DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取同分类的典故 -->
+    <select id="selectStoriesByCategory" resultMap="StoryRecommendVoMap">
+        SELECT s.id, s.title, s.summary, s.dynasty, s.keywords, s.cover_image, s.heat
+        FROM story s
+        WHERE s.status = 1
+          AND s.category_id = #{categoryId}
+          AND s.id != #{excludeId}
+        ORDER BY s.heat DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取同朝代的典故 -->
+    <select id="selectStoriesByDynasty" resultMap="StoryRecommendVoMap">
+        SELECT id, title, summary, dynasty, keywords, cover_image, heat
+        FROM story
+        WHERE status = 1
+          AND dynasty = #{dynasty}
+          AND id != #{excludeId}
+        ORDER BY heat DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据关键词搜索相似典故 -->
+    <select id="selectSimilarByKeywords" resultMap="StoryRecommendVoMap">
+        SELECT id, title, summary, dynasty, keywords, cover_image, heat
+        FROM story
+        WHERE status = 1
+          AND id != #{excludeId}
+          AND (
+              keywords LIKE CONCAT('%', #{keywords}, '%')
+              OR title LIKE CONCAT('%', #{keywords}, '%')
+          )
+        ORDER BY heat DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取用户行为过的典故ID列表 -->
+    <select id="selectUserInteractedStoryIds" resultType="java.lang.Long">
+        SELECT DISTINCT story_id
+        FROM story_user_action
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 获取用户喜欢的典故 -->
+    <select id="selectUserLikedStories" resultType="java.util.Map">
+        SELECT
+            sua.story_id AS storyId,
+            COUNT(*) AS actionCount,
+            SUM(CASE WHEN sua.action_type = 'like' THEN 3
+                     WHEN sua.action_type = 'fav' THEN 5
+                     ELSE 1 END) AS weight
+        FROM story_user_action sua
+        WHERE sua.user_id = #{userId}
+        GROUP BY sua.story_id
+        ORDER BY weight DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Item-CF: 喜欢该典故的用户还喜欢哪些其他典故 -->
+    <select id="selectCoOccurrenceStories" resultType="java.util.Map">
+        SELECT
+            t2.story_id AS storyId,
+            COUNT(DISTINCT t2.user_id) AS coOccurrenceCount,
+            SUM(CASE WHEN t2.action_type = 'like' THEN 3
+                     WHEN t2.action_type = 'fav' THEN 5
+                     ELSE 1 END) AS weight
+        FROM story_user_action t1
+        INNER JOIN story_user_action t2 ON t1.user_id = t2.user_id AND t1.story_id != t2.story_id
+        WHERE t1.story_id = #{storyId}
+          <if test="userId != null">
+              AND t2.user_id != #{userId}
+          </if>
+        GROUP BY t2.story_id
+        ORDER BY coOccurrenceCount DESC, weight DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计典故的互动数量 -->
+    <select id="selectStoryStats" resultType="java.util.Map">
+        SELECT
+            COUNT(CASE WHEN action_type = 'view' THEN 1 END) AS viewCount,
+            COUNT(CASE WHEN action_type = 'like' THEN 1 END) AS likeCount,
+            COUNT(CASE WHEN action_type = 'fav' THEN 1 END) AS favCount
+        FROM story_user_action
+        WHERE story_id = #{storyId}
+    </select>
+
+    <!-- 插入用户行为记录 -->
+    <insert id="insertUserAction">
+        INSERT INTO story_user_action (user_id, story_id, action_type)
+        VALUES (#{userId}, #{storyId}, #{actionType})
+    </insert>
+
+</mapper>

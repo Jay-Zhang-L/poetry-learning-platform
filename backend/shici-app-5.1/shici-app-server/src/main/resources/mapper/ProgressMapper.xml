@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.ProgressMapper">
+
+  <select id="get" resultType="com.shici.domain.UserProgress">
+    SELECT id, user_id, unit_id, progress, streak_days, updated_at
+    FROM user_progress
+    WHERE user_id = #{userId} AND unit_id = #{unitId}
+    LIMIT 1
+  </select>
+
+  <insert id="upsert" parameterType="com.shici.domain.UserProgress" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO user_progress (user_id, unit_id, progress, streak_days, updated_at)
+    VALUES (#{userId}, #{unitId}, #{progress}, #{streakDays}, NOW())
+    ON DUPLICATE KEY UPDATE
+      progress = VALUES(progress),
+      streak_days = VALUES(streak_days),
+      updated_at = NOW()
+  </insert>
+
+</mapper>

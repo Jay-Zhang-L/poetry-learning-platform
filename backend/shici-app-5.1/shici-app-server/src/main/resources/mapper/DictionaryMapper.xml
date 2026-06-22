@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.DictionaryMapper">
+
+    <resultMap id="DictionaryEntryMap" type="com.shici.domain.DictionaryEntry">
+        <id property="id" column="id"/>
+
+        <result property="word" column="word"/>
+        <result property="pinyin" column="pinyin"/>
+        <result property="fullPinyin" column="full_pinyin"/>
+        <result property="alternativePinyin" column="alternative_pinyin"/>
+
+        <result property="explanation" column="explanation"/>
+        <result property="detailedDefinition" column="detailed_definition"/>
+        <result property="wordType" column="word_type"/>
+        <result property="usageType" column="usage_type"/>
+        <result property="emotionalColor" column="emotional_color"/>
+
+        <result property="ancientMeaning" column="ancient_meaning"/>
+        <result property="modernMeaning" column="modern_meaning"/>
+        <result property="semanticShift" column="semantic_shift"/>
+
+        <result property="sourceTitle" column="source_title"/>
+        <result property="sourceText" column="source_text"/>
+        <result property="sourceNote" column="source_note"/>
+
+        <result property="mistakeProne" column="mistake_prone"/>
+        <result property="writingNote" column="writing_note"/>
+        <result property="characterNote" column="character_note"/>
+
+        <result property="exampleClassical" column="example_classical"/>
+        <result property="examplePoetry" column="example_poetry"/>
+        <result property="exampleModern" column="example_modern"/>
+
+        <result property="culturalBackground" column="cultural_background"/>
+        <result property="geographyNote" column="geography_note"/>
+        <result property="literatureNote" column="literature_note"/>
+
+        <result property="poemExpand1Title" column="poem_expand_1_title"/>
+        <result property="poemExpand1Author" column="poem_expand_1_author"/>
+        <result property="poemExpand1Quote" column="poem_expand_1_quote"/>
+        <result property="poemExpand1Analysis" column="poem_expand_1_analysis"/>
+
+        <result property="poemExpand2Title" column="poem_expand_2_title"/>
+        <result property="poemExpand2Author" column="poem_expand_2_author"/>
+        <result property="poemExpand2Quote" column="poem_expand_2_quote"/>
+        <result property="poemExpand2Analysis" column="poem_expand_2_analysis"/>
+
+        <result property="poemExpand3Title" column="poem_expand_3_title"/>
+        <result property="poemExpand3Author" column="poem_expand_3_author"/>
+        <result property="poemExpand3Quote" column="poem_expand_3_quote"/>
+        <result property="poemExpand3Analysis" column="poem_expand_3_analysis"/>
+
+        <result property="synonymText" column="synonym_text"/>
+        <result property="antonymText" column="antonym_text"/>
+        <result property="recommendText" column="recommend_text"/>
+
+        <result property="coverUrl" column="cover_url"/>
+        <result property="themeTag" column="theme_tag"/>
+        <result property="isRecommend" column="is_recommend"/>
+        <result property="sortNo" column="sort_no"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        id,
+        word,
+        pinyin,
+        full_pinyin,
+        alternative_pinyin,
+        explanation,
+        detailed_definition,
+        word_type,
+        usage_type,
+        emotional_color,
+        ancient_meaning,
+        modern_meaning,
+        semantic_shift,
+        source_title,
+        source_text,
+        source_note,
+        mistake_prone,
+        writing_note,
+        character_note,
+        example_classical,
+        example_poetry,
+        example_modern,
+        cultural_background,
+        geography_note,
+        literature_note,
+        poem_expand_1_title,
+        poem_expand_1_author,
+        poem_expand_1_quote,
+        poem_expand_1_analysis,
+        poem_expand_2_title,
+        poem_expand_2_author,
+        poem_expand_2_quote,
+        poem_expand_2_analysis,
+        poem_expand_3_title,
+        poem_expand_3_author,
+        poem_expand_3_quote,
+        poem_expand_3_analysis,
+        synonym_text,
+        antonym_text,
+        recommend_text,
+        cover_url,
+        theme_tag,
+        is_recommend,
+        sort_no,
+        status,
+        created_at,
+        updated_at
+    </sql>
+
+    <select id="selectHomeRecommend" resultMap="DictionaryEntryMap">
+        select
+        <include refid="BaseColumns"/>
+        from dictionary_entry
+        where status = 1
+        order by is_recommend desc, sort_no asc, id desc
+    </select>
+
+    <select id="searchEntries" resultMap="DictionaryEntryMap">
+        select
+        <include refid="BaseColumns"/>
+        from dictionary_entry
+        where status = 1
+        <if test="keyword != null and keyword != ''">
+            and (
+            word like concat('%', #{keyword}, '%')
+            or pinyin like concat('%', #{keyword}, '%')
+            or full_pinyin like concat('%', #{keyword}, '%')
+            or explanation like concat('%', #{keyword}, '%')
+            or detailed_definition like concat('%', #{keyword}, '%')
+            or source_text like concat('%', #{keyword}, '%')
+            or cultural_background like concat('%', #{keyword}, '%')
+            or literature_note like concat('%', #{keyword}, '%')
+            or theme_tag like concat('%', #{keyword}, '%')
+            or recommend_text like concat('%', #{keyword}, '%')
+            )
+        </if>
+        order by
+        case when word = #{keyword} then 0 else 1 end,
+        is_recommend desc,
+        sort_no asc,
+        id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectById" resultMap="DictionaryEntryMap">
+        select
+        <include refid="BaseColumns"/>
+        from dictionary_entry
+        where id = #{id}
+        and status = 1
+        limit 1
+    </select>
+
+</mapper>

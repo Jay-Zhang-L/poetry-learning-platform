@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.GamePoemMatchMapper">
+
+    <select id="selectLevelById" resultType="java.util.HashMap">
+        select
+        id as levelId,
+        title,
+        description,
+        time_limit_sec as timeLimitSec,
+        slot_limit as slotLimit,
+        poem_count as poemCount
+        from game_poem_match_level
+        where id = #{levelId}
+        and status = 1
+        limit 1
+    </select>
+
+    <select id="selectFragmentsByLevelId" resultType="com.shici.domain.dto.GamePoemMatchFragmentDto">
+        select
+        f.id as fragmentId,
+        g.id as groupId,
+        g.poem_title as poemTitle,
+        g.author as author,
+        g.dynasty as dynasty,
+        g.full_text as poemText,
+        f.fragment_text as fragmentText,
+        f.fragment_order as fragmentOrder
+        from game_poem_match_group g
+        join game_poem_match_fragment f on g.id = f.group_id
+        where g.level_id = #{levelId}
+        and g.status = 1
+        and f.status = 1
+        order by g.sort_no asc, f.fragment_order asc, f.id asc
+    </select>
+
+    <insert id="insertRecord"
+            parameterType="com.shici.domain.entity.GamePoemMatchRecord"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        insert into game_poem_match_record
+        (user_id, level_id, score, matched_count, is_passed, used_seconds)
+        values
+        (#{userId}, #{levelId}, #{score}, #{matchedCount}, #{passed}, #{usedSeconds})
+    </insert>
+
+    <update id="increaseRecordScore">
+        update game_poem_match_record
+        set
+        score = ifnull(score, 0) + 1,
+        matched_count = ifnull(matched_count, 0) + 1,
+        used_seconds = #{usedSeconds}
+        where id = #{recordId}
+    </update>
+
+    <update id="finishRecord">
+        update game_poem_match_record
+        set
+        is_passed = #{passed},
+        used_seconds = #{usedSeconds}
+        where id = #{recordId}
+    </update>
+
+    <update id="updateUserPoemMatchScore">
+        update sys_user
+        set
+        poem_match_score = ifnull(poem_match_score, 0) + #{score},
+        poem_match_correct_count = ifnull(poem_match_correct_count, 0) + #{matchedCount},
+        poem_match_pass_count = ifnull(poem_match_pass_count, 0) + #{passed},
+        game_total_score = ifnull(game_total_score, 0) + #{score},
+        game_updated_at = now()
+        where id = #{userId}
+    </update>
+
+    <select id="selectGameTotalRank" resultType="com.shici.domain.dto.GameRankItemDto">
+        select
+        u.id as userId,
+        u.username,
+        u.nickname,
+        u.avatar_url as avatarUrl,
+        ifnull(t.totalScore, 0) as totalScore,
+        ifnull(t.totalScore, 0) as poemMatchScore,
+        ifnull(t.correctCount, 0) as correctCount,
+        ifnull(t.passCount, 0) as passCount
+        from sys_user u
+        left join (
+        select
+        user_id,
+        sum(ifnull(score, 0)) as totalScore,
+        sum(ifnull(matched_count, 0)) as correctCount,
+        sum(ifnull(is_passed, 0)) as passCount
+        from game_poem_match_record
+        where user_id is not null
+        group by user_id
+        ) t on u.id = t.user_id
+        order by ifnull(t.totalScore, 0) desc,
+        ifnull(t.correctCount, 0) desc,
+        ifnull(t.passCount, 0) desc,
+        u.id asc
+        limit 20
+    </select>
+
+</mapper>

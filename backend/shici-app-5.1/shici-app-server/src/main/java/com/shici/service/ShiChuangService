@@ -1,0 +1,12 @@
+package com.shici.service;
+
+import java.util.Map;
+
+public interface ShiChuangService {
+
+    Object search(String keyword, Integer limit);
+
+    Object recommend(Map<String, Object> params);
+
+    Object detail(Long id);
+}

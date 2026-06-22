@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.PoemMapper">
+
+    <resultMap id="PoemCardDtoMap" type="com.shici.domain.dto.PoemCardDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="author" column="author"/>
+        <result property="dynasty" column="dynasty"/>
+        <result property="genre" column="genre"/>
+        <result property="theme" column="theme"/>
+        <result property="difficulty" column="difficulty"/>
+        <result property="hot" column="hot"/>
+        <result property="len" column="len"/>
+        <result property="quote" column="quote"/>
+        <result property="content" column="content"/>
+        <result property="translation" column="translation"/>
+        <result property="analysis" column="analysis"/>
+        <result property="tagsStr" column="tags"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="audioUrl" column="audio_url"/>
+        <result property="audioDuration" column="audio_duration"/>
+        <result property="audioType" column="audio_type"/>
+        <result property="fav" column="fav"/>
+        <result property="season" column="season"/>
+        <result property="emotion" column="emotion"/>
+        <result property="scenery" column="scenery"/>
+        <result property="festival" column="festival"/>
+        <result property="historicalPeriod" column="historical_period"/>
+        <result property="poeticForm" column="poetic_form"/>
+        <result property="rhetoricalDevice" column="rhetorical_device"/>
+        <result property="famousLineType" column="famous_line_type"/>
+    </resultMap>
+
+    <select id="page" resultMap="PoemCardDtoMap">
+        SELECT id, title, author, dynasty, genre, theme, difficulty, hot, len, quote, translation, analysis, tags, cover_url, audio_url, audio_duration, audio_type, season, emotion, scenery, festival, historical_period, poetic_form, rhetorical_device, famous_line_type
+        FROM poem
+        WHERE 1 = 1
+        <if test="q != null and q != ''">
+            AND (
+            title LIKE CONCAT('%', #{q}, '%')
+            OR author LIKE CONCAT('%', #{q}, '%')
+            OR quote LIKE CONCAT('%', #{q}, '%')
+            OR tags LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+        <if test="dynasty != null and dynasty != '' and dynasty != '全部'"> AND dynasty = #{dynasty} </if>
+        <if test="genre != null and genre != '' and genre != '全部'"> AND genre = #{genre} </if>
+        <if test="theme != null and theme != '' and theme != '全部'"> AND theme = #{theme} </if>
+        <if test="season != null and season != '' and season != '全部'"> AND season = #{season} </if>
+        <if test="emotion != null and emotion != '' and emotion != '全部'"> AND emotion = #{emotion} </if>
+        <if test="scenery != null and scenery != '' and scenery != '全部'"> AND scenery = #{scenery} </if>
+        <if test="festival != null and festival != '' and festival != '全部'"> AND festival = #{festival} </if>
+        <if test="historicalPeriod != null and historicalPeriod != '' and historicalPeriod != '全部'"> AND historical_period = #{historicalPeriod} </if>
+        <if test="poeticForm != null and poeticForm != '' and poeticForm != '全部'"> AND poetic_form = #{poeticForm} </if>
+        <if test="rhetoricalDevice != null and rhetoricalDevice != '' and rhetoricalDevice != '全部'"> AND rhetorical_device = #{rhetoricalDevice} </if>
+        <if test="famousLineType != null and famousLineType != '' and famousLineType != '全部'"> AND famous_line_type = #{famousLineType} </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'difficulty'">difficulty DESC, id ASC</when>
+            <when test="orderBy == 'len'">len DESC, id ASC</when>
+            <when test="orderBy == 'random'">RAND()</when>
+            <otherwise>id ASC</otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(1)
+        FROM poem
+        WHERE 1 = 1
+        <if test="q != null and q != ''">
+            AND (
+            title LIKE CONCAT('%', #{q}, '%')
+            OR author LIKE CONCAT('%', #{q}, '%')
+            OR quote LIKE CONCAT('%', #{q}, '%')
+            OR tags LIKE CONCAT('%', #{q}, '%')
+            )
+        </if>
+        <if test="dynasty != null and dynasty != '' and dynasty != '全部'"> AND dynasty = #{dynasty} </if>
+        <if test="genre != null and genre != '' and genre != '全部'"> AND genre = #{genre} </if>
+        <if test="theme != null and theme != '' and theme != '全部'"> AND theme = #{theme} </if>
+        <if test="season != null and season != '' and season != '全部'"> AND season = #{season} </if>
+        <if test="emotion != null and emotion != '' and emotion != '全部'"> AND emotion = #{emotion} </if>
+        <if test="scenery != null and scenery != '' and scenery != '全部'"> AND scenery = #{scenery} </if>
+        <if test="festival != null and festival != '' and festival != '全部'"> AND festival = #{festival} </if>
+        <if test="historicalPeriod != null and historicalPeriod != '' and historicalPeriod != '全部'"> AND historical_period = #{historicalPeriod} </if>
+        <if test="poeticForm != null and poeticForm != '' and poeticForm != '全部'"> AND poetic_form = #{poeticForm} </if>
+        <if test="rhetoricalDevice != null and rhetoricalDevice != '' and rhetoricalDevice != '全部'"> AND rhetorical_device = #{rhetoricalDevice} </if>
+        <if test="famousLineType != null and famousLineType != '' and famousLineType != '全部'"> AND famous_line_type = #{famousLineType} </if>
+    </select>
+
+    <select id="findById" resultMap="PoemCardDtoMap">
+        SELECT id, title, author, dynasty, genre, theme, difficulty, hot, len, quote, content, translation, analysis, tags, cover_url, audio_url, audio_duration, audio_type, season, emotion, scenery, festival, historical_period, poetic_form, rhetorical_device, famous_line_type
+        FROM poem
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateAudio">
+        UPDATE poem
+        SET audio_url = #{audioUrl},
+            audio_duration = #{audioDuration},
+            audio_type = #{audioType}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCover">
+        UPDATE poem
+        SET cover_url = #{coverUrl}
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insertFav">
+        INSERT INTO poem_fav (user_id, poem_id, create_time)
+        VALUES (#{userId}, #{poemId}, NOW())
+    </insert>
+
+    <delete id="deleteFav">
+        DELETE FROM poem_fav
+        WHERE user_id = #{userId}
+          AND poem_id = #{poemId}
+    </delete>
+
+    <select id="existsFav" resultType="int">
+        SELECT COUNT(1)
+        FROM poem_fav
+        WHERE user_id = #{userId}
+          AND poem_id = #{poemId}
+    </select>
+
+    <select id="getUserFavList" resultMap="PoemCardDtoMap">
+        SELECT p.id, p.title, p.author, p.dynasty, p.genre, p.theme, p.difficulty, p.hot, p.len, p.quote, p.translation, p.analysis, p.tags, p.cover_url, p.audio_url, p.audio_duration, p.audio_type, p.season, p.emotion, p.scenery, p.festival, p.historical_period, p.poetic_form, p.rhetorical_device, p.famous_line_type, 1 as fav
+        FROM poem p
+                 INNER JOIN poem_fav f ON p.id = f.poem_id
+        WHERE f.user_id = #{userId}
+        ORDER BY f.create_time DESC
+            LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countUserFav" resultType="long">
+        SELECT COUNT(1)
+        FROM poem_fav
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="getUserFavIds" resultType="java.lang.Long">
+        SELECT poem_id
+        FROM poem_fav
+        WHERE user_id = #{userId}
+        <if test="poemIds != null and poemIds.size() > 0">
+            AND poem_id IN
+            <foreach collection="poemIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAllAuthors" resultType="java.util.HashMap">
+        SELECT author as `key`,
+        COUNT(*) as count,
+        SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT dynasty ORDER BY dynasty), ',', 1) as dynastyTop,
+        SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT genre ORDER BY genre), ',', 1) as genreTop,
+        SUBSTRING_INDEX(GROUP_CONCAT(quote ORDER BY hot DESC), ',', 1) as sampleQuote
+        FROM poem
+        WHERE author IS NOT NULL
+        AND author != ''
+        <if test="dynasty != null and dynasty != ''"> AND dynasty = #{dynasty} </if>
+        <if test="genre != null and genre != ''"> AND genre = #{genre} </if>
+        <if test="theme != null and theme != ''"> AND theme = #{theme} </if>
+        <if test="season != null and season != ''"> AND season = #{season} </if>
+        <if test="emotion != null and emotion != ''"> AND emotion = #{emotion} </if>
+        <if test="scenery != null and scenery != ''"> AND scenery = #{scenery} </if>
+        <if test="festival != null and festival != ''"> AND festival = #{festival} </if>
+        <if test="historicalPeriod != null and historicalPeriod != ''"> AND historical_period = #{historicalPeriod} </if>
+        <if test="poeticForm != null and poeticForm != ''"> AND poetic_form = #{poeticForm} </if>
+        <if test="rhetoricalDevice != null and rhetoricalDevice != ''"> AND rhetorical_device = #{rhetoricalDevice} </if>
+        GROUP BY author
+        ORDER BY count DESC, author
+    </select>
+    <!-- ==================== 作者列表 SQL（简化版） ==================== -->
+    <select id="getAuthors" resultType="map">
+        SELECT
+        author as `key`,
+        COUNT(*) as count,
+        MAX(dynasty) as dynastyTop,
+        MAX(genre) as genreTop,
+        MAX(CASE WHEN quote IS NOT NULL AND quote != '' THEN title END) as sampleTitle,
+        MAX(CASE WHEN quote IS NOT NULL AND quote != '' THEN quote END) as sampleQuote,
+        MAX(CASE WHEN content IS NOT NULL AND content != '' THEN content END) as sampleContent
+        FROM poem
+        WHERE 1 = 1
+        AND author IS NOT NULL AND author != ''
+        <if test="dynasty != null and dynasty != ''">
+            AND dynasty = #{dynasty}
+        </if>
+        <if test="genre != null and genre != ''">
+            AND genre = #{genre}
+        </if>
+        <if test="theme != null and theme != ''">
+            AND theme = #{theme}
+        </if>
+        <if test="season != null and season != ''">
+            AND season = #{season}
+        </if>
+        <if test="emotion != null and emotion != ''">
+            AND emotion = #{emotion}
+        </if>
+        <if test="scenery != null and scenery != ''">
+            AND scenery = #{scenery}
+        </if>
+        <if test="festival != null and festival != ''">
+            AND festival = #{festival}
+        </if>
+        <if test="historicalPeriod != null and historicalPeriod != ''">
+            AND historical_period = #{historicalPeriod}
+        </if>
+        <if test="poeticForm != null and poeticForm != ''">
+            AND poetic_form = #{poeticForm}
+        </if>
+        <if test="rhetoricalDevice != null and rhetoricalDevice != ''">
+            AND rhetorical_device = #{rhetoricalDevice}
+        </if>
+        GROUP BY author
+        ORDER BY COUNT(*) DESC, author ASC
+    </select>
+
+</mapper>

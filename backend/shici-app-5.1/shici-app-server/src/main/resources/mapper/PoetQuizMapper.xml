@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.PoetQuizMapper">
+
+    <!-- 查询问卷列表 -->
+    <select id="selectQuizList" resultType="com.shici.domain.dto.PoetQuizListVo">
+        SELECT
+            q.id AS quizId,
+            q.code,
+            q.title,
+            q.description,
+            q.cover_url AS coverUrl,
+            (SELECT COUNT(1) FROM game_poet_quiz_question WHERE quiz_id = q.id AND status = 1) AS questionCount
+        FROM game_poet_quiz q
+        WHERE q.status = 1
+        ORDER BY q.sort_no ASC, q.id ASC
+    </select>
+
+    <!-- 查询问卷详情 -->
+    <select id="selectQuizDetail" resultType="com.shici.domain.dto.PoetQuizDetailVo">
+        SELECT
+            id AS quizId,
+            title,
+            description,
+            cover_url AS coverUrl
+        FROM game_poet_quiz
+        WHERE id = #{quizId} AND status = 1
+            LIMIT 1
+    </select>
+
+    <!-- 查询问卷题目列表 -->
+    <select id="selectQuestionsByQuizId" resultType="com.shici.domain.dto.PoetQuizQuestionVo">
+        SELECT
+            id AS questionId,
+            question_no AS questionNo,
+            question_text AS questionText
+        FROM game_poet_quiz_question
+        WHERE quiz_id = #{quizId} AND status = 1
+        ORDER BY question_no ASC, id ASC
+    </select>
+
+    <!-- 查询题目选项列表 -->
+    <select id="selectOptionsByQuestionId" resultType="com.shici.domain.dto.PoetQuizOptionVo">
+        SELECT
+            id AS optionId,
+            option_no AS optionNo,
+            option_text AS optionText
+        FROM game_poet_quiz_option
+        WHERE question_id = #{questionId} AND status = 1
+        ORDER BY option_no ASC, id ASC
+    </select>
+
+    <!-- 查询问卷题目数量 -->
+    <select id="countQuestionsByQuizId" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM game_poet_quiz_question
+        WHERE quiz_id = #{quizId} AND status = 1
+    </select>
+
+    <!-- 插入测评记录 -->
+    <insert id="insertAttempt" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO game_poet_quiz_attempt(
+            user_id,
+            quiz_id,
+            total_questions,
+            answered_count,
+            status
+        ) VALUES (
+                     #{userId},
+                     #{quizId},
+                     #{totalQuestions},
+                     #{answeredCount},
+                     #{status}
+                 )
+    </insert>
+
+    <!-- 查询测评记录 -->
+    <select id="selectAttemptById" resultType="com.shici.domain.PoetQuizAttempt">
+        SELECT
+            id,
+            user_id AS userId,
+            quiz_id AS quizId,
+            total_questions AS totalQuestions,
+            answered_count AS answeredCount,
+            status,
+            result_poet_id AS resultPoetId,
+            result_score AS resultScore,
+            result_scores_snapshot AS resultScoresSnapshot,
+            started_at AS startedAt,
+            finished_at AS finishedAt,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM game_poet_quiz_attempt
+        WHERE id = #{attemptId}
+            LIMIT 1
+    </select>
+
+    <!-- 更新测评记录答题数 -->
+    <update id="updateAttemptAnsweredCount">
+        UPDATE game_poet_quiz_attempt
+        SET answered_count = #{answeredCount},
+            updated_at = NOW()
+        WHERE id = #{attemptId}
+    </update>
+
+    <!-- 更新测评记录完成状态 -->
+    <update id="updateAttemptFinished">
+        UPDATE game_poet_quiz_attempt
+        SET status = 'finished',
+            result_poet_id = #{resultPoetId},
+            result_score = #{resultScore},
+            result_scores_snapshot = #{resultScoresSnapshot},
+            finished_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{attemptId}
+    </update>
+
+    <!-- 插入或更新答题记录 -->
+    <insert id="insertOrUpdateAnswer">
+        INSERT INTO game_poet_quiz_answer(
+            attempt_id,
+            question_id,
+            option_id
+        ) VALUES (
+                     #{attemptId},
+                     #{questionId},
+                     #{optionId}
+                 )
+            ON DUPLICATE KEY UPDATE
+                                 option_id = #{optionId}
+    </insert>
+
+    <!-- 查询选项详情 -->
+    <select id="selectOptionById" resultType="com.shici.domain.PoetQuizOption">
+        SELECT
+            id,
+            question_id AS questionId,
+            option_no AS optionNo,
+            option_text AS optionText,
+            status
+        FROM game_poet_quiz_option
+        WHERE id = #{optionId}
+            LIMIT 1
+    </select>
+
+    <!-- 查询某次测评的得分榜：返回所有启用诗人（含0分），并带名字 -->
+    <select id="selectScoresByAttemptId" resultType="com.shici.domain.dto.PoetScoreVo">
+        SELECT
+            p.id AS poetId,
+            p.name AS name,
+            p.dynasty AS dynasty,
+            p.avatar_url AS avatarUrl,
+            IFNULL(t.score, 0) AS score
+        FROM game_poet_profile p
+                 LEFT JOIN (
+            SELECT
+                os.poet_id AS poet_id,
+                SUM(os.score) AS score
+            FROM game_poet_quiz_answer a
+                     JOIN game_poet_quiz_option_score os ON os.option_id = a.option_id
+            WHERE a.attempt_id = #{attemptId}
+            GROUP BY os.poet_id
+        ) t ON t.poet_id = p.id
+        WHERE p.status = 1
+        ORDER BY score DESC, p.sort_no ASC, p.id ASC
+    </select>
+
+    <!-- 查询诗人形象详情 -->
+    <select id="selectPoetPersonaById" resultType="com.shici.domain.dto.PoetPersonaVo">
+        SELECT
+            id AS poetId,
+            name,
+            dynasty,
+            avatar_url AS avatarUrl,
+            persona_title AS personaTitle,
+            persona_desc AS personaDesc,
+            representative_works AS representativeWorks,
+            tags
+        FROM game_poet_profile
+        WHERE id = #{poetId} AND status = 1
+            LIMIT 1
+    </select>
+
+    <!-- 查询所有诗人形象 -->
+    <select id="selectAllPoetPersonas" resultType="com.shici.domain.dto.PoetPersonaVo">
+        SELECT
+            id AS poetId,
+            name,
+            dynasty,
+            avatar_url AS avatarUrl,
+            persona_title AS personaTitle,
+            persona_desc AS personaDesc,
+            representative_works AS representativeWorks,
+            tags
+        FROM game_poet_profile
+        WHERE status = 1
+        ORDER BY sort_no ASC, id ASC
+    </select>
+    <select id="countMyAttempts" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM game_poet_quiz_attempt a
+        <where>
+            a.user_id = #{userId}
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectMyAttempts" resultType="com.shici.domain.dto.PoetQuizAttemptHistoryVo">
+        SELECT
+        a.id AS attemptId,
+        a.quiz_id AS quizId,
+        q.title AS quizTitle,
+        a.status AS status,
+        a.total_questions AS totalQuestions,
+        a.answered_count AS answeredCount,
+        a.result_poet_id AS resultPoetId,
+        a.result_score AS resultScore,
+        a.started_at AS startedAt,
+        a.finished_at AS finishedAt,
+        p.name AS resultPoetName,
+        p.dynasty AS resultPoetDynasty,
+        p.avatar_url AS resultPoetAvatarUrl,
+        p.persona_title AS resultPoetPersonaTitle
+        FROM game_poet_quiz_attempt a
+        LEFT JOIN game_poet_quiz q ON q.id = a.quiz_id
+        LEFT JOIN game_poet_profile p ON p.id = a.result_poet_id
+        <where>
+            a.user_id = #{userId}
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+        </where>
+        ORDER BY a.created_at DESC, a.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <delete id="deleteAnswersByAttemptId">
+        DELETE FROM game_poet_quiz_answer
+        WHERE attempt_id = #{attemptId}
+    </delete>
+
+    <delete id="deleteAttemptByIdAndUserId">
+        DELETE FROM game_poet_quiz_attempt
+        WHERE id = #{attemptId}
+          AND user_id = #{userId}
+    </delete>
+
+    <!-- 统计用户对某题是否已答 -->
+    <select id="countAnswerByAttemptAndQuestion" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM game_poet_quiz_answer
+        WHERE attempt_id = #{attemptId} AND question_id = #{questionId}
+    </select>
+
+</mapper>

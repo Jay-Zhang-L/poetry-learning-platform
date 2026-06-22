@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.KnowledgeImageMapper">
+
+    <resultMap id="BaseResultMap" type="com.shici.domain.KnowledgeImage">
+        <id column="id" property="id"/>
+        <result column="knowledge_id" property="knowledgeId"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="image_desc" property="imageDesc"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <select id="findByKnowledgeId" resultMap="BaseResultMap">
+        SELECT
+            id,
+            knowledge_id,
+            image_url,
+            image_desc,
+            sort_order,
+            created_at
+        FROM knowledge_image
+        WHERE knowledge_id = #{knowledgeId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+</mapper>

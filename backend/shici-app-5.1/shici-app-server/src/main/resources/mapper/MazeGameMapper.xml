@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.MazeGameMapper">
+
+    <select id="selectLevelBySeasonAndLevel" resultType="java.util.HashMap">
+        select
+        id,
+        season_no as seasonNo,
+        level_no as levelNo,
+        title,
+        poem_title as poemTitle,
+        poem_author as poemAuthor,
+        size_n as sizeN,
+        grid_json as gridJson,
+        lines_json as linesJson,
+        paths_json as pathsJson,
+        difficulty
+        from game_poem_maze_level
+        where season_no = #{seasonNo}
+        and level_no = #{levelNo}
+        and status = 1
+        limit 1
+    </select>
+
+    <select id="selectLevelList" resultType="java.util.HashMap">
+        select
+        id,
+        season_no as seasonNo,
+        level_no as levelNo,
+        title,
+        poem_title as poemTitle,
+        poem_author as poemAuthor,
+        difficulty
+        from game_poem_maze_level
+        where season_no = #{seasonNo}
+        and status = 1
+        order by sort_no asc, id asc
+    </select>
+
+    <select id="countUserSolvedLine" resultType="java.lang.Integer">
+        select count(1)
+        from game_poem_maze_user_line
+        where user_id = #{userId}
+        and level_id = #{levelId}
+        and line_index = #{lineIndex}
+    </select>
+
+    <insert id="insertSolvedLine">
+        insert into game_poem_maze_user_line (
+        user_id, season_no, level_id, level_no,
+        poem_title, poem_author, line_index, line_text, score
+        ) values (
+        #{userId}, #{seasonNo}, #{levelId}, #{levelNo},
+        #{poemTitle}, #{poemAuthor}, #{lineIndex}, #{lineText}, 1
+        )
+    </insert>
+
+    <select id="selectSolvedLineIndexes" resultType="java.lang.Integer">
+        select line_index
+        from game_poem_maze_user_line
+        where user_id = #{userId}
+        and level_id = #{levelId}
+        order by line_index asc
+    </select>
+
+    <select id="selectGlobalRank" resultType="com.shici.domain.dto.MazeRankVo">
+        select
+        u.id as userId,
+        u.username as username,
+        u.nickname as nickname,
+        u.avatar_url as avatarUrl,
+        ifnull(r.totalScore, 0) as totalScore,
+        ifnull(r.totalLines, 0) as totalLines,
+        ifnull(r.solvedPoems, 0) as solvedPoems,
+        r.latestSolveTime as latestSolveTime
+        from sys_user u
+        left join (
+        select
+        user_id,
+        sum(score) as totalScore,
+        count(*) as totalLines,
+        count(distinct level_id) as solvedPoems,
+        date_format(max(created_at), '%Y-%m-%d %H:%i:%s') as latestSolveTime
+        from game_poem_maze_user_line
+        where season_no = #{seasonNo}
+        group by user_id
+        ) r on u.id = r.user_id
+        order by
+        totalScore desc,
+        totalLines desc,
+        solvedPoems desc,
+        latestSolveTime desc,
+        u.id asc
+    </select>
+
+    <select id="countUserScoreBySeason" resultType="java.lang.Integer">
+        select ifnull(sum(score), 0)
+        from game_poem_maze_user_line
+        where user_id = #{userId}
+        and season_no = #{seasonNo}
+    </select>
+
+</mapper>

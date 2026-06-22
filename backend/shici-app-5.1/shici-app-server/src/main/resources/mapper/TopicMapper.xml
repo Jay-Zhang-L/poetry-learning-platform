@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.TopicMapper">
+
+    <select id="listTopics" resultType="com.shici.domain.dto.TopicDto">
+        SELECT id,
+               code,
+               name,
+               subtitle,
+               icon,
+               cover_url AS coverUrl
+        FROM topic
+        ORDER BY sort_no ASC, id ASC
+        LIMIT 8
+    </select>
+
+</mapper>

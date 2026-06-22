@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.ReciteMapper">
+
+  <!-- 诗单列表：音频集 / 鉴赏 -->
+  <select id="selectPlaylistsByType" resultType="com.shici.domain.dto.RecitePlaylistDto">
+    select
+      id,
+      name,
+      cover_url as cover,
+      type,
+      description
+    from recite_playlist
+    where status = 1
+      and type = #{type}
+    order by sort_no asc, id asc
+  </select>
+
+  <!-- 某个诗单下的音频条目 -->
+  <select id="selectPlaylistItems" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+      id,
+      playlist_id as playlistId,
+      poem_id as poemId,
+      item_title as title,
+      item_subtitle as subtitle,
+      cover_url as cover,
+      audio_url as audioUrl,
+      false as up
+    from recite_playlist_item
+    where playlist_id = #{playlistId}
+    order by sort_no asc, id asc
+  </select>
+
+  <!-- 某个诗单下的视频（专题鉴赏） -->
+  <select id="selectPlaylistVideos" resultType="com.shici.domain.dto.ReciteVideoDto">
+    select
+      id,
+      playlist_id as playlistId,
+      title,
+      author,
+      thumbnail,
+      video_url as videoUrl,
+      duration,
+      quality,
+      views,
+      tags,
+      description
+    from recite_playlist_video
+    where playlist_id = #{playlistId}
+    order by sort_no asc, id asc
+  </select>
+  <select id="searchAudioItems" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+    id,
+    playlist_id as playlistId,
+    poem_id as poemId,
+    item_title as title,
+    item_subtitle as subtitle,
+    cover_url as cover,
+    audio_url as audioUrl,
+    false as up
+    from recite_playlist_item
+    where item_title like concat('%', #{keyword}, '%')
+    or item_subtitle like concat('%', #{keyword}, '%')
+    order by id desc
+    limit 30
+  </select>
+
+  <select id="searchVideos" resultType="com.shici.domain.dto.ReciteVideoDto">
+    select
+    id,
+    playlist_id as playlistId,
+    title,
+    author,
+    thumbnail,
+    video_url as videoUrl,
+    duration,
+    quality,
+    views,
+    tags,
+    description
+    from recite_playlist_video
+    where title like concat('%', #{keyword}, '%')
+    or author like concat('%', #{keyword}, '%')
+    or tags like concat('%', #{keyword}, '%')
+    or description like concat('%', #{keyword}, '%')
+    order by views desc, id desc
+    limit 30
+  </select>
+
+  <!-- 我的收藏（诗单） -->
+  <select id="selectMyFavoritePlaylists" resultType="com.shici.domain.dto.RecitePlaylistDto">
+    select
+      rp.id,
+      rp.name,
+      rp.cover_url as cover,
+      rp.type,
+      rp.description
+    from recite_favorite rf
+           join recite_playlist rp on rp.id = rf.target_id
+    where rf.user_id = #{userId}
+      and rf.favorite_type = 'playlist'
+      and rp.status = 1
+    order by rf.create_time desc, rf.id desc
+  </select>
+
+  <!-- 我的收藏（音频） -->
+  <select id="selectMyFavoriteAudioItems" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+      i.id,
+      i.playlist_id as playlistId,
+      i.poem_id as poemId,
+      i.item_title as title,
+      i.item_subtitle as subtitle,
+      i.cover_url as cover,
+      i.audio_url as audioUrl,
+      false as up
+    from recite_favorite rf
+           join recite_playlist_item i on i.id = rf.target_id
+    where rf.user_id = #{userId}
+      and rf.favorite_type = 'audio'
+    order by rf.create_time desc, rf.id desc
+  </select>
+
+  <!-- 我的收藏（视频） -->
+  <select id="selectMyFavoriteVideos" resultType="com.shici.domain.dto.ReciteVideoDto">
+    select
+      rpv.id,
+      rpv.title,
+      rpv.author,
+      rpv.thumbnail,
+      rpv.video_url as videoUrl,
+      rpv.duration,
+      rpv.quality,
+      rpv.views,
+      rpv.tags,
+      rpv.description,
+      true as favorited
+    from recite_favorite rf
+           join recite_playlist_video rpv on rpv.id = rf.target_id
+    where rf.user_id = #{userId}
+      and rf.favorite_type = 'video'
+    order by rf.create_time desc, rf.id desc
+  </select>
+
+  <!-- 最近播放（诗单） -->
+  <select id="selectMyRecentPlaylists" resultType="com.shici.domain.dto.RecitePlaylistDto">
+    select
+      rp.id,
+      rp.name,
+      rp.cover_url as cover,
+      rp.type,
+      rp.description
+    from recite_recent_play rrp
+           join recite_playlist rp on rp.id = rrp.playlist_id
+    where rrp.user_id = #{userId}
+      and rrp.playlist_id is not null
+      and rp.status = 1
+    group by rp.id, rp.name, rp.cover_url, rp.type, rp.description
+    order by max(rrp.play_time) desc
+      limit 20
+  </select>
+
+  <!-- 最近播放（音频） -->
+  <select id="selectMyRecentAudioItems" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+      i.id,
+      i.playlist_id as playlistId,
+      i.poem_id as poemId,
+      i.item_title as title,
+      i.item_subtitle as subtitle,
+      i.cover_url as cover,
+      i.audio_url as audioUrl,
+      false as up
+    from recite_recent_play rrp
+           join recite_playlist_item i on i.id = rrp.media_id
+    where rrp.user_id = #{userId}
+      and rrp.media_id is not null
+    group by
+      i.id,
+      i.playlist_id,
+      i.poem_id,
+      i.item_title,
+      i.item_subtitle,
+      i.cover_url,
+      i.audio_url
+    order by max(rrp.play_time) desc
+      limit 20
+  </select>
+
+  <!-- 最近播放（视频） -->
+  <select id="selectMyRecentVideos" resultType="com.shici.domain.dto.ReciteVideoDto">
+    select
+      rpv.id,
+      rpv.title,
+      rpv.author,
+      rpv.thumbnail,
+      rpv.video_url as videoUrl,
+      rpv.duration,
+      rpv.quality,
+      rpv.views,
+      rpv.tags,
+      rpv.description
+    from recite_recent_video rrv
+           join recite_playlist_video rpv on rpv.id = rrv.video_id
+    where rrv.user_id = #{userId}
+    group by rpv.id, rpv.title, rpv.author, rpv.thumbnail,
+             rpv.video_url, rpv.duration, rpv.quality,
+             rpv.views, rpv.tags, rpv.description
+    order by max(rrv.play_time) desc
+      limit 20
+  </select>
+
+  <!-- 热门音频 -->
+  <select id="selectHotList" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+    i.id,
+    i.playlist_id as playlistId,
+    i.poem_id as poemId,
+    i.item_title as title,
+    i.item_subtitle as subtitle,
+    i.cover_url as cover,
+    i.audio_url as audioUrl,
+    true as up
+    from recite_playlist_item i
+    order by
+    (
+    select count(1)
+    from recite_record r
+    where r.media_id = i.id
+    ) desc,
+    i.id desc
+    limit 8
+  </select>
+
+  <!-- 精选音频 -->
+  <select id="selectPickList" resultType="com.shici.domain.dto.ReciteListenItemDto">
+    select
+    i.id,
+    i.playlist_id as playlistId,
+    i.poem_id as poemId,
+    i.item_title as title,
+    i.item_subtitle as subtitle,
+    i.cover_url as cover,
+    i.audio_url as audioUrl,
+    false as up
+    from recite_playlist_item i
+    where i.id not in (
+    select t.id from (
+    select hi.id
+    from recite_playlist_item hi
+    order by
+    (
+    select count(1)
+    from recite_record hr
+    where hr.media_id = hi.id
+    ) desc,
+    hi.id desc
+    limit 8
+    ) t
+    )
+    order by
+    (
+    select count(1)
+    from recite_record r
+    where r.media_id = i.id
+    ) desc,
+    i.id desc
+    limit 8
+  </select>
+  <!-- 视频推荐（所有视频） -->
+  <select id="selectVideosByType" resultType="com.shici.domain.dto.ReciteVideoDto">
+    select
+    id,
+    type,
+    title,
+    author_name as author,
+    thumbnail_url as thumbnail,
+    video_url as videoUrl,
+    duration_sec as duration,
+    quality,
+    views,
+    tags,
+    null as description
+    from recite_video
+    <if test="type != null and type != ''">
+      where type = #{type}
+    </if>
+    order by views desc, id desc
+    limit 12
+  </select>
+
+  <!-- 音频播放记录 -->
+  <insert id="insertPlayRecord">
+    insert into recite_record (
+      user_id,
+      poem_id,
+      playlist_id,
+      media_id,
+      play_type,
+      play_seconds,
+      created_at
+    ) values (
+               #{userId},
+               #{poemId},
+               #{playlistId},
+               #{mediaId},
+               #{playType},
+               0,
+               now()
+             )
+  </insert>
+
+  <!-- 最近音频播放 -->
+  <insert id="insertRecentPlay">
+    insert into recite_recent_play (
+      user_id,
+      playlist_id,
+      poem_id,
+      media_id,
+      play_type,
+      play_time
+    ) values (
+               #{userId},
+               #{playlistId},
+               #{poemId},
+               #{mediaId},
+               #{playType},
+               now()
+             )
+  </insert>
+
+  <!-- 视频播放记录 -->
+  <insert id="insertVideoPlayRecord">
+    insert into recite_video_record (
+      user_id,
+      video_id,
+      playlist_id,
+      play_seconds,
+      play_type,
+      created_at
+    ) values (
+               #{userId},
+               #{videoId},
+               #{playlistId},
+               #{playSeconds},
+               #{playType},
+               now()
+             )
+  </insert>
+
+  <!-- 最近视频播放 -->
+  <insert id="insertRecentVideoPlay">
+    insert into recite_recent_video (
+      user_id,
+      video_id,
+      playlist_id,
+      play_type,
+      play_time
+    ) values (
+               #{userId},
+               #{videoId},
+               #{playlistId},
+               #{playType},
+               now()
+             )
+      on duplicate key update
+                         playlist_id = #{playlistId},
+                         play_type = #{playType},
+                         play_time = now()
+  </insert>
+
+  <!-- 新增收藏 -->
+  <insert id="insertFavorite">
+    insert into recite_favorite (
+      user_id,
+      target_id,
+      favorite_type,
+      create_time
+    ) values (
+               #{userId},
+               #{targetId},
+               #{favoriteType},
+               now()
+             )
+  </insert>
+
+  <!-- 删除收藏 -->
+  <delete id="deleteFavorite">
+    delete from recite_favorite
+    where user_id = #{userId}
+      and target_id = #{targetId}
+      and favorite_type = #{favoriteType}
+  </delete>
+
+  <!-- 判断是否已收藏 -->
+  <select id="countFavorite" resultType="java.lang.Integer">
+    select count(1)
+    from recite_favorite
+    where user_id = #{userId}
+      and target_id = #{targetId}
+      and favorite_type = #{favoriteType}
+  </select>
+
+  <!-- ========== 朗诵诗词选择相关 ========== -->
+
+  <!-- 获取可朗诵的诗词列表 -->
+  <select id="selectPoemsForRecitation" resultType="com.shici.domain.dto.RecitePoemSelectionDto">
+    SELECT
+    id,
+    poem_id as poemId,
+    title,
+    poet_name as poetName,
+    dynasty,
+    content,
+    difficulty_level as difficultyLevel,
+    recommended_duration as recommendedDuration,
+    emotion_type as emotionType,
+    is_featured as isFeatured
+    FROM recite_poem_selection
+    WHERE 1=1
+    <if test="difficultyLevel != null">
+      AND difficulty_level = #{difficultyLevel}
+    </if>
+    <if test="emotionType != null and emotionType != ''">
+      AND emotion_type = #{emotionType}
+    </if>
+    <if test="keyword != null and keyword != ''">
+      AND (title LIKE CONCAT('%', #{keyword}, '%')
+      OR poet_name LIKE CONCAT('%', #{keyword}, '%')
+      OR content LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    ORDER BY is_featured DESC, sort_order ASC, id ASC
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <!-- 统计可朗诵诗词总数 -->
+  <select id="countPoemsForRecitation" resultType="long">
+    SELECT COUNT(1)
+    FROM recite_poem_selection
+    WHERE 1=1
+    <if test="difficultyLevel != null">
+      AND difficulty_level = #{difficultyLevel}
+    </if>
+    <if test="emotionType != null and emotionType != ''">
+      AND emotion_type = #{emotionType}
+    </if>
+    <if test="keyword != null and keyword != ''">
+      AND (title LIKE CONCAT('%', #{keyword}, '%')
+      OR poet_name LIKE CONCAT('%', #{keyword}, '%')
+      OR content LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+  </select>
+
+  <!-- 根据ID获取诗词详情 -->
+  <select id="selectPoemForRecitationById" resultType="com.shici.domain.dto.RecitePoemSelectionDto">
+    SELECT
+      id,
+      poem_id as poemId,
+      title,
+      poet_name as poetName,
+      dynasty,
+      content,
+      difficulty_level as difficultyLevel,
+      recommended_duration as recommendedDuration,
+      emotion_type as emotionType,
+      is_featured as isFeatured
+    FROM recite_poem_selection
+    WHERE id = #{id}
+  </select>
+
+</mapper>

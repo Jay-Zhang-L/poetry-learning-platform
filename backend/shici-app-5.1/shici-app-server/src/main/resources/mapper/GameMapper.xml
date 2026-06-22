@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shici.mapper.GamePlayMapper">
+
+  <select id="selectFhTopics" resultType="com.shici.domain.dto.FhTopicVo">
+    SELECT
+    id,
+    keyword,
+    title,
+    description,
+    cover_url AS coverUrl
+    FROM ff_topic
+    WHERE status = 1
+    ORDER BY sort_num ASC, id ASC
+  </select>
+
+  <select id="selectFhTopicById" resultType="com.shici.domain.dto.FhTopicVo">
+    SELECT
+    id,
+    keyword,
+    title,
+    description,
+    cover_url AS coverUrl
+    FROM ff_topic
+    WHERE id = #{topicId}
+    LIMIT 1
+  </select>
+
+  <select id="selectFhTopicByKeyword" resultType="com.shici.domain.dto.FhTopicVo">
+    SELECT
+    id,
+    keyword,
+    title,
+    description,
+    cover_url AS coverUrl
+    FROM ff_topic
+    WHERE status = 1
+    AND keyword = #{keyword}
+    LIMIT 1
+  </select>
+
+  <select id="selectRandomFhTopic" resultType="com.shici.domain.dto.FhTopicVo">
+    SELECT
+    id,
+    keyword,
+    title,
+    description,
+    cover_url AS coverUrl
+    FROM ff_topic
+    WHERE status = 1
+    ORDER BY RAND()
+    LIMIT 1
+  </select>
+
+  <insert id="insertFhSession" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO ff_game_session(
+    user_id,
+    current_topic_id,
+    current_keyword,
+    score,
+    correct_count,
+    wrong_count,
+    skip_count,
+    status
+    ) VALUES (
+    #{userId},
+    #{currentTopicId},
+    #{currentKeyword},
+    #{score},
+    #{correctCount},
+    #{wrongCount},
+    #{skipCount},
+    #{status}
+    )
+  </insert>
+
+  <select id="selectFhSessionById" resultType="com.shici.domain.FhGameSession">
+    SELECT
+    id,
+    user_id AS userId,
+    current_topic_id AS currentTopicId,
+    current_keyword AS currentKeyword,
+    score,
+    correct_count AS correctCount,
+    wrong_count AS wrongCount,
+    skip_count AS skipCount,
+    status,
+    started_at AS startedAt,
+    ended_at AS endedAt,
+    created_at AS createdAt,
+    updated_at AS updatedAt
+    FROM ff_game_session
+    WHERE id = #{sessionId}
+    LIMIT 1
+  </select>
+
+  <update id="updateFhSessionTopic">
+    UPDATE ff_game_session
+    SET current_topic_id = #{topicId},
+    current_keyword = #{keyword},
+    updated_at = NOW()
+    WHERE id = #{sessionId}
+  </update>
+
+  <update id="updateFhSessionStats">
+    UPDATE ff_game_session
+    SET score = #{score},
+    correct_count = #{correctCount},
+    wrong_count = #{wrongCount},
+    skip_count = #{skipCount},
+    updated_at = NOW()
+    WHERE id = #{sessionId}
+  </update>
+
+  <select id="selectExamplesByKeyword" resultType="com.shici.domain.dto.FhSentenceVo">
+    SELECT
+    id,
+    keyword,
+    sentence,
+    sentence_clean AS sentenceClean,
+    poem_title AS poemTitle,
+    author,
+    dynasty,
+    source_text AS sourceText,
+    difficulty
+    FROM ff_sentence
+    WHERE is_active = 1
+    AND keyword = #{keyword}
+    ORDER BY difficulty ASC, id ASC
+    LIMIT 3
+  </select>
+
+  <select id="selectRandomExampleByKeyword" resultType="com.shici.domain.dto.FhSentenceVo">
+    SELECT
+    id,
+    keyword,
+    sentence,
+    sentence_clean AS sentenceClean,
+    poem_title AS poemTitle,
+    author,
+    dynasty,
+    source_text AS sourceText,
+    difficulty
+    FROM ff_sentence
+    WHERE is_active = 1
+    AND keyword = #{keyword}
+    ORDER BY RAND()
+    LIMIT 1
+  </select>
+
+  <select id="selectMatchedSentence" resultType="com.shici.domain.dto.FhSentenceVo">
+    SELECT
+    id,
+    keyword,
+    sentence,
+    sentence_clean AS sentenceClean,
+    poem_title AS poemTitle,
+    author,
+    dynasty,
+    source_text AS sourceText,
+    difficulty
+    FROM ff_sentence
+    WHERE is_active = 1
+    AND keyword = #{keyword}
+    AND sentence_clean = #{sentenceClean}
+    LIMIT 1
+  </select>
+
+  <insert id="insertFhAnswer" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO ff_game_answer(
+    session_id,
+    user_id,
+    topic_id,
+    keyword,
+    user_sentence,
+    user_sentence_clean,
+    matched_sentence_id,
+    is_correct,
+    score_award,
+    hint_used
+    ) VALUES (
+    #{sessionId},
+    #{userId},
+    #{topicId},
+    #{keyword},
+    #{userSentence},
+    #{userSentenceClean},
+    #{matchedSentenceId},
+    #{isCorrect},
+    #{scoreAward},
+    #{hintUsed}
+    )
+  </insert>
+
+  <select id="countCorrectSentenceInSession" resultType="java.lang.Integer">
+    SELECT COUNT(1)
+    FROM ff_game_answer
+    WHERE session_id = #{sessionId}
+    AND matched_sentence_id = #{sentenceId}
+    AND is_correct = 1
+  </select>
+
+  <select id="selectFhRankList" resultType="com.shici.domain.dto.FhRankVo">
+    SELECT
+    u.id AS userId,
+    u.username AS username,
+    u.nickname AS nickname,
+    u.avatar_url AS avatarUrl,
+    COALESCE(SUM(a.score_award), 0) AS totalScore,
+    COALESCE(SUM(CASE WHEN a.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correctCount
+    FROM sys_user u
+    LEFT JOIN ff_game_answer a ON a.user_id = u.id
+    GROUP BY u.id, u.username, u.nickname, u.avatar_url
+    ORDER BY totalScore DESC, correctCount DESC, u.id ASC
+    LIMIT 10
+  </select>
+
+  <select id="searchFhSentences" resultType="com.shici.domain.dto.FhSentenceVo">
+    SELECT
+    id,
+    keyword,
+    sentence,
+    sentence_clean AS sentenceClean,
+    poem_title AS poemTitle,
+    author,
+    dynasty,
+    source_text AS sourceText,
+    difficulty
+    FROM ff_sentence
+    WHERE is_active = 1
+    AND (
+    sentence LIKE CONCAT('%', #{q}, '%')
+    OR poem_title LIKE CONCAT('%', #{q}, '%')
+    OR author LIKE CONCAT('%', #{q}, '%')
+    OR keyword LIKE CONCAT('%', #{q}, '%')
+    )
+    ORDER BY difficulty ASC, id ASC
+    LIMIT 20
+  </select>
+
+</mapper>

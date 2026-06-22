@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shici.mapper.MediaMapper">
+
+  <select id="listByPoemId" resultType="com.shici.domain.Media">
+    SELECT id, poem_id, type, title, url, duration_sec, extra
+    FROM media
+    WHERE poem_id = #{poemId}
+    <if test="type != null and type != ''">
+      AND type = #{type}
+    </if>
+    ORDER BY id ASC
+  </select>
+
+</mapper>
