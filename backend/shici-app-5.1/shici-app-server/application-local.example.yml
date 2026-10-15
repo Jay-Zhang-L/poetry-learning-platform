@@ -1,0 +1,33 @@
+# Copy to application-local.yml in this directory, then enable the local profile.
+# Database schema and seed data must be supplied separately.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/shici?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  servlet:
+    multipart:
+      location: ./local-data/uploads/temp
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/public/
+        - file:./local-data/files/
+        - file:./local-data/files/uploads/
+
+app:
+  file-root: ./local-data/files
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173
+
+file:
+  upload:
+    path: ./local-data/files/uploads
+
+ai:
+  image:
+    upload-dir: ./local-data/files/uploads/
+
+paddleocr:
+  url: ${PADDLEOCR_URL:http://127.0.0.1:8868/ocr}

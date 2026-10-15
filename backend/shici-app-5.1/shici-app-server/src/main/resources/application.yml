@@ -8,9 +8,9 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/shici?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&useServerPrepStmts=true&cachePrepStmts=true&rewriteBatchedStatements=true
-    username: root
-    password: 20050719
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/shici?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&useServerPrepStmts=true&cachePrepStmts=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
 
     hikari:
       maximum-pool-size: 10
@@ -66,13 +66,13 @@ file:
 # AI 配置（DeepSeek + 智谱）
 ai:
   deepseek:
-    api-key: sk-365d6a467bb141dc89b32bd6938207dd
+    api-key: ${DEEPSEEK_API_KEY:}
     model-url: https://api.deepseek.com/v1/chat/completions
     model: deepseek-chat
     max-tokens: 2048
     temperature: 0.7
   zhipu:
-    api-key: 79d928d72199430d92379785f5ee6194.CouRenejMgQBKNii
+    api-key: ${ZHIPU_API_KEY:}
     model: glm-4-flash
     base-url: https://open.bigmodel.cn/api/paas/v4
   # 图片上传配置
@@ -94,13 +94,13 @@ ai:
 # 百度语音配置
 baidu:
   speech:
-    api-key: fietXVkrIBV5fqOBtbt4ge70
-    secret-key: gFILoAPbe0QFn43j2WnMSnmRMGKa4Kay
+    api-key: ${BAIDU_SPEECH_API_KEY:}
+    secret-key: ${BAIDU_SPEECH_SECRET_KEY:}
     dev-pid: 1537
 
 # 通义千问配置
 qwen:
-  api-key: test
+  api-key: ${QWEN_API_KEY:}
 
 logging:
   level:

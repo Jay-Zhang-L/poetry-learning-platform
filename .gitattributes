@@ -1,0 +1,5 @@
+# Exported scene viewers and dependency locks are not hand-written application code.
+frontend/**/public/viewers/** linguist-generated=true
+**/pnpm-lock.yaml linguist-generated=true
+database/*.sql -text
+database/*.sql -text
