@@ -8,7 +8,7 @@
 
 **Vue 3 · Spring Boot 3 · MyBatis · MySQL · Three.js · AI**
 
-[功能介绍](#功能介绍) · [界面展示](docs/screenshots.md) · [本地运行](docs/getting-started.md) · [技术架构](docs/architecture.md)
+[功能介绍](#功能介绍) · [界面展示](docs/screenshots.md) · [本地运行](docs/getting-started.md) · [数据库导入](database/README.md) · [技术架构](docs/architecture.md)
 
 </div>
 
@@ -22,7 +22,7 @@
 
 **作者：[Jay-Zhang-L](https://github.com/Jay-Zhang-L)。项目由作者独立开发，曾在竞赛中获奖。**
 
-> 当前公开内容包括 Web 前端和 Java 后端。数据库初始化 SQL、完整业务数据及部分外部服务尚未随仓库提供，完整复现需要补齐这些依赖。详见[运行指南](docs/getting-started.md)与[公开范围说明](docs/project-status.md)。
+> 当前公开内容包括 Web 前端、Java 后端及作者导出的 MySQL 数据库快照（81 张表的结构与现有演示数据）。数据库可按[导入说明](database/README.md)初始化，AI、OCR、语音及部分媒体资源仍需另行配置。详见[运行指南](docs/getting-started.md)与[公开范围说明](docs/project-status.md)。
 
 ## 项目亮点
 
@@ -91,6 +91,9 @@ poetry-learning-platform/
 ├── README.md
 ├── .gitignore
 ├── .gitattributes
+├── database/
+│   ├── README.md                 # 数据库快照与导入步骤
+│   └── shici-full.sql            # 81 张表的结构与现有演示数据
 ├── docs/
 │   ├── getting-started.md       # 环境、配置、启动与常见问题
 │   ├── architecture.md          # 分层结构与核心流程
@@ -115,7 +118,7 @@ poetry-learning-platform/
 
 ## 本地运行
 
-准备 Node.js 22 LTS、JDK 17、Maven 3.9 和 MySQL 8。先阅读[完整运行指南](docs/getting-started.md)，确认数据库与资源已准备好。
+准备 Node.js 22 LTS、JDK 17、Maven 3.9 和 MySQL 8。先按[数据库说明](database/README.md)导入 `database/shici-full.sql`，再按[完整运行指南](docs/getting-started.md)配置服务与资源。
 
 ```bash
 git clone https://github.com/Jay-Zhang-L/poetry-learning-platform.git
